@@ -10,6 +10,15 @@ the problem until after I looked at some code. So obviously the code helps, and
 there can be good reasons to just look at code rather than being stuck
 indefinitely.
 
+Some of the files in this repository differ from my submitted solutions in
+relatively trivial ways, such as the removal of commented-out code or
+`#ifdef`'d code for an archaic compiler I used to use (Microsoft Visual C++
+6.0). However, I suspect some of them simply don't work because either they
+contained errors that I corrected while away from home (so the changes were
+not saved locally) or I made modifications locally that turned out to give
+incorrect solutions and forgot to revert to the older versions. If you discover
+an incorrect solution, please leave a comment so I can fix it!
+
 The copyright notice (LICENSE) applies to all code except for a few algorithms
 copied from the Stanford ACM team notebook, which are indicated as such. There
 is technically no license for that code that I'm aware of, but it's unlikely
