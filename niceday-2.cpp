@@ -1,4 +1,5 @@
 // 2009-08-18
+// corrected 2014-01-29
 // The simple solution to NICEDAY. Doesn't generalize to LIS2 though;
 // see niceday-1.cpp for another idea
 #include <iostream>
@@ -14,7 +15,7 @@ int in() //INPUT HACK FOR EXTREME SPEED
 		x=(x<<1)+(x<<3)+c-'0';
 	}
 }
-static int BITPool[1000000]={0}; //DON'T RE-INITIALIZE MEMORY
+static int BITPool[1000010]={0}; //DON'T RE-INITIALIZE MEMORY
 int* BIT;
 int N;
 int query(int x)
@@ -26,7 +27,7 @@ int query(int x)
 }
 void insert(int x,int y)
 {
-	for (;x<N;x|=x+1)
+	for (;x<=N;x|=x+1)
 		BIT[x]=max(BIT[x],y);
 }
 int main()
@@ -53,7 +54,7 @@ int main()
 				insert(first[i],second[i]);
 			}
 		printf("%d\n",res);
-		BIT+=100000;
+		BIT+=100001;
 	}
 	return 0;
 }
