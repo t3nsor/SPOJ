@@ -25,7 +25,6 @@ int dfs1(int parent, int node, vector<vector<Edge>>& adjlist) {
 
     preorder[node] = current_prenum++;
     int ret = preorder[node];
-    int num_children = 0;
     for (size_t i = 0; i < adjlist[node].size(); i++) {
         auto& edge = adjlist[node][i];
         if (edge.target == parent) continue;
@@ -36,7 +35,6 @@ int dfs1(int parent, int node, vector<vector<Edge>>& adjlist) {
                 stk.emplace(node, i);
             }
         } else {
-            ++num_children;
             stk.emplace(node, i);
             const int child_ret = dfs1(node, edge.target, adjlist);
             ret = min(ret, child_ret);
