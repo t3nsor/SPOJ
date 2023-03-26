@@ -6,10 +6,10 @@
 // Similarly, ignoring edges in directions 1 and 4 gives only A rhombs, and
 // ignoring edges in directions 2 and 5 gives only C rhombs. To get the number
 // of rhombs in one of these reduced polygons, all we have to do is compute the
-// area of the polygon. To simplify the code, we treat , we define a `Coord`
+// area of the polygon. To simplify the code, we define a `Coord`
 // type which represents an element of the ring Z[sqrt(3)], and we take each
 // rhomb to have a side length of 2, so that all coordinates fall within that
-// ring. (That means the area of a single rhomb is 4 sqrt(3).)
+// ring. (That means the area of a single rhomb is 2 sqrt(3).)
 #include <iostream>
 #include <vector>
 using namespace std;
