@@ -1,8 +1,9 @@
 // 2008-08-30
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
+// updated 2023-10-21 to fix compilation errors after rejudging
 #include <algorithm>
 #include <map>
+#include <stdio.h>
+#include <utility>
 using namespace std;
 typedef pair<int,int> PII;
 typedef pair<int,PII> PIPII;
@@ -38,11 +39,7 @@ int in()
 	int res=0;
 	for(;;)
 	{
-#ifdef ONLINE_JUDGE
 		c=getchar_unlocked();
-#else
-		c=getchar();
-#endif
 		if (c<=32)
 			return res;
 		res=(res<<1)+(res<<3)+c-'0';
