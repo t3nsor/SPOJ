@@ -1,6 +1,8 @@
-// 2008-08-19
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
+// 2023-10-21
+// originally written 2008-08-19 but with compilation errors
+#include <algorithm>
+#include <stdio.h>
+#include <string.h>
 using namespace std;
 int main()
 {
