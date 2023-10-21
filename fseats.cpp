@@ -1,6 +1,8 @@
-// 2008-08-20
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
+// 2023-10-20
+// originally written 2008-08-20 but with compilation errors
+#include <algorithm>
+#include <stdio.h>
+#include <utility>
 using namespace std;
 int ok[301][301];
 int a[301];
@@ -8,9 +10,6 @@ int totalseats[301][301];
 int main()
 {
 	int X,Y,K,i,j,minext,best,beg,end,sum,k;
-#ifndef ONLINE_JUDGE
-	freopen("find.in","r",stdin);
-#endif
 	for(;;)
 	{
 		scanf("%d %d %d",&Y,&X,&K);
