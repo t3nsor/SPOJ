@@ -1,5 +1,5 @@
-// 2023-10-20
-// originally written 2008-08-20 but with compilation errors
+// 2008-08-20
+// updated 2023-10-20 to fix compilation errors after rejudging
 #include <algorithm>
 #include <stdio.h>
 #include <utility>

@@ -1,5 +1,5 @@
-// 2023-10-20
-// originally written 2008-06-21 but with compilation errors
+// 2008-06-21
+// updated 2023-10-20 to fix compilation errors after rejudging
 #include <stdio.h>
 #include <string.h>
 inline void output(int x)

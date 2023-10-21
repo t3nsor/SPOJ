@@ -1,5 +1,5 @@
-// 2023-10-20
-// originally written 2008-10-28 but with compilation errors
+// 2008-10-28
+// updated 2023-10-20 to fix compilation errors after rejudging
 #include <math.h>
 #include <stdio.h>
 #define Sin(x) (sin((x)/180.0*3.1415926536))

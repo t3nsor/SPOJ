@@ -1,5 +1,5 @@
-// 2023-10-21
-// originally written 2010-01-10 but with compilation errors
+// 2010-01-10
+// updated 2023-10-21 to fix compilation errors after rejudging
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
