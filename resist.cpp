@@ -1,9 +1,10 @@
-// 2010-01-10
-// Yep, that's a non-library implementation of Gaussian elimination...
-#include <iostream>
-#include <cstring>
+// 2023-10-21
+// originally written 2010-01-10 but with compilation errors
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <utility>
 #include <vector>
-#include <cmath>
 using namespace std;
 int N; //size of matrix
 long double M1[100][100];
