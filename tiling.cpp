@@ -1,7 +1,6 @@
 // 2008-08-03
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-using namespace std;
+// updated 2023-10-21 to fix compilation errors after rejudging
+#include <stdio.h>
 int main()
 {
 	int t;
@@ -12,7 +11,7 @@ int main()
 	{
 		scanf("%d %d\n",&R,&C);
 		for (i=0; i<R; i++)
-			gets(grid[i]);
+			fgets(grid[i], 1005, stdin);
 		int fx[100]; int nfx=0;
 		int fy[100]; int nfy=0;
 		for (i=1; i<=R; i++)
