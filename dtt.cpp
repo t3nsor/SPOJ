@@ -1,6 +1,8 @@
-// 2008-06-02
-#include <cstdio>
+// 2023-10-20
+// originally written 2008-06-02 but with compilation errors
 #include <algorithm>
+#include <stdio.h>
+#include <string.h>
 using namespace std;
 static char memo[1594323];
 int f(int x,int n)
