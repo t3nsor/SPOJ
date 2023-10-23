@@ -3,46 +3,8 @@
 #include <cstring>
 #include <vector>
 using namespace std;
-int N,M; //size of matrix
-int M1[300][301];
-void row_swap(int r1,int r2) {
-    int i;
-    for (i=0; i<N+1; i++) {
-        swap(M1[r1][i],M1[r2][i]);
-    }
-}
-void row_scale(int r1,int r2,int w1,int w2) {
-    int i;
-    for (i=0; i<N+1; i++) {
-        M1[r1][i]=(w1*M1[r1][i]+w2*M1[r2][i])%7;
-    }
-}
 constexpr int inv[7]={0, 1, 4, 5, 2, 3, 6};
 constexpr int sol[7]={7, 8, 9, 3, 4, 5, 6};
-void solve() {
-    int i,j;
-    for (j=0; j<N; j++) {
-        //column
-        //make M[j][j] equal to 1
-        if (!M1[j][j]) {
-            //find one that's not
-            bool ok=false;
-            for (i=0; i<M; i++) {
-                if (M1[i][j]) {
-                    ok=true;
-                    row_swap(i,j);
-                    break;
-                }
-            }
-            if (!ok) continue; //skip this one
-        }
-        row_scale(j,0,inv[M1[j][j]],0);
-        for (i=0; i<M; i++) {
-            if (i==j) continue;
-            row_scale(i,j,1,7-M1[i][j]);
-        }
-    }
-}
 int parse_day(const char* s) {
     if (s[0]=='M') return 1;
     if (s[0]=='W') return 3;
