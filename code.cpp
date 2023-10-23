@@ -1,62 +1,60 @@
-// 2008-06-22
-#include <cstdio>
-#ifdef _MSC_VER
-#define PC putchar
-#else
-#define PC putchar_unlocked
-#endif
-static int adjlist[100000][10];
-static int list[1100000];
-int listsize;
-void find_tour(int v)
-{
-	bool b=false;
-	int i,j;
-	for(;;)
-	{
-		i=0;
-		bool found=false;
-		while (i<10&&!found)
-		{
-			j=adjlist[v][i];
-			if (j>=0)
-				found=true;
-			i++;
-		}
-		if (!found) break;
-		adjlist[v][i-1]=-1;
-		find_tour(j);
-	}
-	list[listsize++]=v%10;
+// 2023-10-22
+#include <algorithm>
+#include <array>
+#include <stack>
+#include <stdio.h>
+#include <utility>
+#include <vector>
+using namespace std;
+void do_testcase(int n) {
+    if (n == 1) {
+        puts("0123456789");
+        return;
+    }
+    int V = 1; for (int i = 0; i < n; i++) V *= 10;
+    vector<array<int, 10>> adj(V / 10);
+    for (int i = 0; i < V / 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            adj[i][j] = 10 * (i % (V / 100)) + j;
+        }
+    }
+    stack<pair<int, int>> S;
+    vector<int> out;
+    int cur = 0;
+    for (;;) {
+        int neighbor = -1;
+        for (int i = 0; i < 10; i++) {
+            if (adj[cur][i] >= 0) {
+                neighbor = i;
+                break;
+            }
+        }
+        if (neighbor >= 0) {
+            S.emplace(cur, neighbor);
+            int next = adj[cur][neighbor];
+            adj[cur][neighbor] = -1;
+            cur = next;
+        } else {
+            if (S.empty()) break;
+            auto p = S.top();
+            S.pop();
+            out.push_back(p.second);
+            cur = p.first;
+        }
+    }
+    reverse(out.begin(), out.end());
+    for (int i = 0; i < n - 1; i++) {
+        putchar('0');
+    }
+    for (const int d : out) {
+        putchar('0' + d);
+    }
+    putchar('\n');
 }
-int main()
-{
-	int n,i,j;
-	//freopen("code.out","w",stdout);
-	for(;;)
-	{
-		scanf("%d",&n);
-		if (n==0)
-			return 0;
-		if (n==1)
-		{
-			printf("0123456789\n");
-			continue;
-		}
-		int p10=1;
-		for (i=1; i<n; i++)
-			p10*=10;
-		//use this many nodes, and create adjlists
-		for (i=0; i<p10; i++)
-			for (j=0; j<10; j++)
-				adjlist[i][j]=10*(i%(p10/10))+j;
-		listsize=0;
-		find_tour(0);
-		for (i=0; i<n-2; i++)
-			PC('0');
-		for (i=listsize-1; i>=0; i--)
-			PC(list[i]+'0');
-		PC('\n');
-	}
-	return 0;
+int main() {
+    int n;
+    for (;;) {
+        scanf("%d", &n);
+        if (n == 0) break; else do_testcase(n);
+    }
 }
