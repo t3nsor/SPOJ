@@ -1,11 +1,8 @@
 // 2023-11-13
 // Brian's implementation of the DC3 algorithm (Kärkkäinen and Sanders).
 #include <algorithm>
-#include <deque>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <utility>
 #include <vector>
 using namespace std;
 
@@ -146,44 +143,31 @@ vector<int> suffix_array(It begin, It end, int K) {
     return result;
 }
 
-constexpr int max_len = 1111111;
+constexpr int max_len = 555555;
 
 char s[max_len];
 int buf[max_len];
 int lcp[max_len];
 int rank_[max_len];
-int where[max_len];
 int main() {
-    int N = 0;
-    int nstr = 0;
-    for (;;) {
-        if (!fgets(s, max_len, stdin)) break;
-        if (s[0] == '\n') {
-            // empty string
-            puts("0");
-            return 0;
-        }
-        if (nstr > 0) {
-            where[N] = -1;
-            buf[N++] = nstr;
-        }
-        for (const char* p = s; *p != '\n'; ++p) {
-            where[N] = nstr;
-            buf[N++] = *p;
-        }
-        ++nstr;
-    }
-    if (nstr == 1) {
-        printf("%d\n", N);
+    const int M1 = strlen(fgets(s, max_len, stdin)) - 1;
+    s[M1] = 1;
+    const int M2 = strlen(fgets(s + M1 + 1, max_len - M1 - 1, stdin)) - 1;
+    if (M1 == 0 || M2 == 0) {
+        puts("0");
         return 0;
     }
-    vector<int> sa = suffix_array(buf, buf + N, 128);
+    const int N = M1 + M2 + 1;
     for (int i = 0; i < N; i++) {
+        buf[i] = s[i];
+    }
+    const auto sa = suffix_array(buf, buf + N, 128);
+    for (int i = 0; i < N; ++i) {
         rank_[sa[i]] = i;
     }
     // apply Kasai's algorithm to find the LCP array
-    int k = 0;
-    for (int i = 0; i < N; i++) {
+    int k=0;
+    for (int i = 0; i < N; ++i) {
         if (k > 0) --k;
         if (rank_[i] == N - 1) {
             lcp[rank_[i]] = k = 0;
@@ -193,43 +177,13 @@ int main() {
         while (i + k < N && j + k < N && buf[i + k] == buf[j + k]) ++k;
         lcp[rank_[i]] = k;
     }
-    int res = 0;
-    // we have to do sliding window min here, unlike the 2 string version where
-    // we just look for 2 adjacent suffixes from different strings
-    int cnt[10] = {0};
-    int nhave = 0;
-    std::deque<std::pair<int, int>> Q;
-    int j = 0;
-    for (int i = 0; i < N; i++) {
-        if (i > 0) {
-            if (where[sa[i - 1]] >= 0) {
-                if (0 == --cnt[where[sa[i - 1]]]) {
-                    --nhave;
-                }
-            }
-            if (Q.size() > 0 && Q.back().first == i - 1) {
-                Q.pop_back();
-            }
-        }
-        while (nhave < nstr && j < N) {
-            if (where[sa[j]] >= 0) {
-                if (0 == cnt[where[sa[j]]]++) {
-                    ++nhave;
-                }
-            }
-            if (j > i) {
-                int val = lcp[j - 1];
-                while (Q.size() > 0 && Q.front().second >= val) {
-                    Q.pop_front();
-                }
-                Q.emplace_front(j - 1, val);
-            }
-            ++j;
-        }
-        if (nhave == nstr) {
-            res = std::max(res, Q.back().second);
+    int res=0;
+    for (int i = 0; i < N - 1; i++) {
+        if ((sa[i] < M1 && sa[i+1] > M1 || sa[i] > M1 && sa[i + 1] < M1)) {
+            res = max(res, lcp[i]);
         }
     }
-    printf("%d\n",res);
+    printf("%d\n", res);
     return 0;
 }
+
