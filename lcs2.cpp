@@ -1,7 +1,5 @@
-// 2023-11-11
-// The suffix array code is copied from "Simple Linear Work Suffix Array
-// Construction", so please contact the authors of that paper if you need a
-// license for it.
+// 2023-11-13
+// Brian's implementation of the DC3 algorithm (Kärkkäinen and Sanders).
 #include <algorithm>
 #include <deque>
 #include <stdio.h>
@@ -9,89 +7,157 @@
 #include <stdlib.h>
 #include <utility>
 #include <vector>
+using namespace std;
 
-#define MAX_STRING_LENGTH 1111111
-#define GetI() (SA12[t] < n0 ? SA12[t] * 3 + 1 : (SA12[t] - n0) * 3 + 2)
-
-int leq2(int a1, int a2, int b1, int b2) {
-    return a1 < b1 || a1 == b1 && a2 <= b2;
-}
-
-int leq3(int a1, int a2, int a3, int b1, int b2, int b3) {
-    return a1 < b1 || a1 == b1 && leq2(a2,a3, b2,b3);
-}
-
-static void radix_pass(int* a, int* b, int* r, int n, int K) {
-    static int c[MAX_STRING_LENGTH];
-    int i, sum, t;
-    for (i = 0;  i <= K;  i++) c[i] = 0;
-    for (i = 0;  i < n;  i++) c[r[a[i]]]++;
-    for (i = 0, sum = 0;  i <= K;  i++) {
-        t = c[i];
-        c[i] = sum;
-        sum += t;
+template <class It, class F>
+void radix_pass(It begin, It end, It out, int K, F f) {
+    vector<int> cnt(K);
+    for (It i = begin; i != end; i++) {
+        cnt[f(*i)]++;
     }
-    for (i = 0;  i < n;  i++) b[c[r[a[i]]]++] = a[i];
+    vector<int> pos(K);
+    for (int i = 1; i < K; i++) {
+        pos[i] = pos[i - 1] + cnt[i - 1];
+    }
+    for (It i = begin; i != end; i++) {
+        int digit = f(*i);
+        out[pos[digit]++] = *i;
+    }
 }
- 
-void suffix_array(int* s, int* SA, int n, int K) {
-    s[n]=s[n+1]=s[n+2]=SA[n]=SA[n+1]=SA[n+2]=0;
-    int n0 = (n+2)/3, n1 = (n+1)/3, n2 = n/3, n02 = n0+n2;
-    std::vector<int> s12(n02 + 3);
-    std::vector<int> SA12(n02 + 3);
-    static int s0[(MAX_STRING_LENGTH+2)/3];
-    static int SA0[(MAX_STRING_LENGTH+2)/3];
-    int i, j, name, c0, c1, c2, p, t, k;
-    s12[n02] = s12[n02+1] = s12[n02+2] = 0;
-    SA12[n02] = SA12[n02+1] = SA12[n02+2] = 0;
-    for (i=0, j=0; i < n+(n0-n1); i++) if (i%3 != 0) s12[j++] = i;
-    radix_pass(s12.data(), SA12.data(), s+2, n02, K);
-    radix_pass(SA12.data(), s12.data(), s+1, n02, K);
-    radix_pass(s12.data(), SA12.data(), s, n02, K);
-    name = 0, c0 = -1, c1 = -1, c2 = -1;
-    for (i = 0; i < n02; i++) {
-        if (s[SA12[i]] != c0 || s[SA12[i]+1] != c1 || s[SA12[i]+2] != c2) {
-            name++;
-            c0 = s[SA12[i]];
-            c1 = s[SA12[i]+1];
-            c2 = s[SA12[i]+2];
+
+template <class It>
+vector<int> suffix_array(It begin, It end, int K) {
+    const auto n = end - begin;
+    const auto m = 3 * ((n + 2) / 3);
+    // step 1: compute suffix array of suffixes with i \nequiv 0 \pmod 3
+    vector<int> skew_indices;
+    for (int i = 0; i < m / 3; i++) {
+        skew_indices.push_back(3 * i + 1);
+        skew_indices.push_back(3 * i + 2);
+    }
+    // radix sort the skew indices
+    vector<int> tmp(skew_indices.size());
+    for (int i = 2; i >= 0; i--) {
+        radix_pass(skew_indices.begin(), skew_indices.end(),
+                   tmp.begin(),
+                   K,
+                   [&] (int j) {
+                       return i + j < n ? begin[i + j] : 0;
+                   });
+        swap(skew_indices, tmp);
+    }
+    vector<int> rank_(m);
+    int rank_cnt = 0;
+    for (int i = 0; i < skew_indices.size(); i++) {
+        if (i == 0 ||
+            skew_indices[i] + 2 >= n ||
+            skew_indices[i - 1] + 2 >= n ||
+            begin[skew_indices[i]] != begin[skew_indices[i - 1]] ||
+            begin[skew_indices[i] + 1] != begin[skew_indices[i - 1] + 1] ||
+            begin[skew_indices[i] + 2] != begin[skew_indices[i - 1] + 2]) {
+            ++rank_cnt;
         }
-        if (SA12[i] % 3 == 1) s12[SA12[i]/3] = name;
-        else s12[SA12[i]/3 + n0] = name;
+        rank_[skew_indices[i]] = rank_cnt;
     }
-    if (name < n02) {
-        suffix_array(s12.data(), SA12.data(), n02, name);
-        for (i = 0; i < n02; i++) s12[SA12[i]] = i + 1;
-    }
-    else for (i = 0; i < n02; i++) SA12[s12[i] - 1] = i;
-    for (i=0, j=0; i < n02; i++) if (SA12[i] < n0) s0[j++] = 3*SA12[i];
-    radix_pass(s0, SA0, s, n0, K);
-    for (p=0, t=n0-n1, k=0; k < n; k++) {
-        i = GetI();
-        j = SA0[p];
-        if (SA12[t] < n0 ?
-                leq2(s[i], s12[SA12[t] + n0], s[j], s12[j/3]) :
-                leq3(s[i], s[i+1], s12[SA12[t]-n0+1], s[j], s[j+1], s12[j/3+n0])) {
-            SA[k] = i; t++;
-            if (t == n02) for (k++; p < n0; p++, k++) SA[k] = SA0[p];
+    vector<int> SA12;
+    if (rank_cnt < skew_indices.size()) {
+        vector<int> s12;
+        for (int i = 1; i < m; i += 3) {
+            s12.push_back(rank_[i]);
         }
-        else {
-            SA[k] = j; p++;
-            if (p == n0) for (k++; t < n02; t++, k++) SA[k] = GetI();
+        for (int i = 2; i < m; i += 3) {
+            s12.push_back(rank_[i]);
         }
+        SA12 = suffix_array(s12.begin(), s12.end(), rank_cnt + 1);
+        for (int& x : SA12) {
+            if (x < m / 3) {
+                x = 3*x + 1;
+            } else {
+                x = 3*(x - m / 3) + 2;
+            }
+        }
+        for (int i = 0; i < SA12.size(); i++) {
+            rank_[SA12[i]] = i + 1;
+        }
+    } else {
+        SA12 = move(skew_indices);
     }
+    // step 2: compute suffix array of suffixes with i \equiv 0 \pmod 3
+    vector<int> SA3;
+    for (int i = 0; i < m; i += 3) {
+        SA3.push_back(i);
+    }
+    tmp.resize(SA3.size());
+    radix_pass(SA3.begin(), SA3.end(), tmp.begin(), SA12.size() + 1,
+               [&] (int i) {
+                   return i + 1 >= n ? 0 : rank_[i + 1];
+               });
+    swap(tmp, SA3);
+    radix_pass(SA3.begin(), SA3.end(), tmp.begin(), K,
+               [&] (int i) { return i >= n ? 0 : begin[i]; });
+    swap(tmp, SA3);
+    // step 3: merge
+    vector<int> result;
+    int i = 0, j = 0;
+    while (i < SA3.size() && j < SA12.size()) {
+        // compare suffixes
+        int k1 = SA3[i];
+        int k2 = SA12[j];
+        bool c;
+        int r1 = k1 < n ? begin[k1] : 0;
+        int r2 = k2 < n ? begin[k2] : 0;
+        if (r1 < r2) {
+            c = true;
+        } else if (r1 > r2) {
+            c = false;
+        } else if (k2 % 3 == 1) {
+            r1 = k1 + 1 >= n ? 0 : rank_[k1 + 1];
+            r2 = k2 + 1 >= n ? 0 : rank_[k2 + 1];
+            c = r1 < r2;
+        } else {
+            r1 = k1 + 1 >= n ? 0 : begin[k1 + 1];
+            r2 = k2 + 1 >= n ? 0 : begin[k2 + 1];
+            if (r1 < r2) {
+                c = true;
+            } else if (r1 > r2) {
+                c = false;
+            } else {
+                r1 = k1 + 2 >= n ? 0 : rank_[k1 + 2];
+                r2 = k2 + 2 >= n ? 0 : rank_[k2 + 2];
+                c = r1 < r2;
+            }
+        }
+        int val;
+        if (c) {
+            val = SA3[i++];
+        } else {
+            val = SA12[j++];
+        }
+        if (val < n) result.push_back(val);
+    }
+    while (i < SA3.size()) {
+        const int val = SA3[i++];
+        if (val < n) result.push_back(val);
+    }
+    while (j < SA12.size()) {
+        const int val = SA12[j++];
+        if (val < n) result.push_back(val);
+    }
+    return result;
 }
-char s[MAX_STRING_LENGTH];
-int buf[MAX_STRING_LENGTH];
-int sa[MAX_STRING_LENGTH];
-int lcp[MAX_STRING_LENGTH];
-int rank[MAX_STRING_LENGTH];
-int where[MAX_STRING_LENGTH];
+
+constexpr int max_len = 1111111;
+
+char s[max_len];
+int buf[max_len];
+int lcp[max_len];
+int rank_[max_len];
+int where[max_len];
 int main() {
     int N = 0;
     int nstr = 0;
     for (;;) {
-        if (!fgets(s, MAX_STRING_LENGTH, stdin)) break;
+        if (!fgets(s, max_len, stdin)) break;
         if (s[0] == '\n') {
             // empty string
             puts("0");
@@ -111,20 +177,20 @@ int main() {
         printf("%d\n", N);
         return 0;
     }
-    suffix_array(buf, sa, N, 128);
+    vector<int> sa = suffix_array(buf, buf + N, 128);
     for (int i = 0; i < N; i++) {
-        rank[sa[i]] = i;
+        rank_[sa[i]] = i;
     }
     int k = 0;
     for (int i = 0; i < N; i++) {
         if (k > 0) --k;
-        if (rank[i] == N - 1) {
-            lcp[rank[i]] = k = 0;
+        if (rank_[i] == N - 1) {
+            lcp[rank_[i]] = k = 0;
             continue;
         }
-        int j = sa[rank[i] + 1];
+        int j = sa[rank_[i] + 1];
         while (i + k < N && j + k < N && buf[i + k] == buf[j + k]) ++k;
-        lcp[rank[i]] = k;
+        lcp[rank_[i]] = k;
     }
     int res = 0;
     // we have to do sliding window min here, unlike the 2 string version where
