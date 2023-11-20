@@ -1,5 +1,6 @@
 // 2023-11-18
 // This solution is due to James Smith: https://www.quora.com/What-is-the-efficient-solution-to-SPOJ-CCROSSX/answer/James-Smith-16196
+// For another approach, see ccrossx-2.cpp.
 // The following variables are defined:
 // * n, d, h[i]: as in the problem statement, except that we index from 0
 // * a[i]: the current height of pillar `i`. Note that a[0] = h[0].
