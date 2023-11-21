@@ -24,7 +24,6 @@ void do_testcase() {
     }
     // compute all pairs shortest paths; also find center
     vector<vector<int>> dist(n, vector<int>(n, -1));
-    pair<int, int> bestc;
     int bestr = 10000;
     for (int i = 0; i < n; i++) {
         queue<int> Q;
@@ -46,7 +45,6 @@ void do_testcase() {
         }
         if (2 * r < bestr) {
             bestr = 2 * r;
-            bestc = {i, -1};
         }
     }
     // check whether the actual center is on an edge
@@ -60,7 +58,6 @@ void do_testcase() {
             }
             if (r < bestr) {
                 bestr = r;
-                bestc = {i, j};
             }
         }
     }
