@@ -1,3 +1,4 @@
+// 2023-12-23
 #include <algorithm>
 #include <stdio.h>
 #include <utility>
@@ -59,9 +60,10 @@ int get_max_flow(vector<vector<st>>&& adj, int s, int t) {
                 const int old_height = height[u];
                 height[u] = best + 1;
                 heightcnt[best + 1]++;
-                if (0 == --heightcnt[old_height]) {
+                if (0 == --heightcnt[old_height] && old_height < V) {
                     for (int i = 0; i < V; i++) {
                         if (height[i] > old_height && height[i] <= V) {
+                            heightcnt[height[i]]--;
                             height[i] = V + 1;
                         }
                     }
