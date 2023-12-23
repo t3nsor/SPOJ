@@ -9,10 +9,9 @@ struct st {
     int cap;
     int back;
 };
-// Brian's implementation of the relabel-to-front algorithm with gap heuristic.
-// Note: We can improve the performance a bit further if nodes that are
-// relabelled by the gap heuristic also get moved to the front. See
-// FASTFLOW.cpp.
+// This program uses the relabel-to-front algorithm with gap heuristic.
+// Measurements suggest that the FIFO vertex selection rule is faster, though.
+// See fastflow.cpp for an implementation.
 int get_max_flow(vector<vector<st>>&& adj, int s, int t) {
     struct ListNode {
         int prev;
