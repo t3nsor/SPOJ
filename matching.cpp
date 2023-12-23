@@ -1,93 +1,96 @@
-// 2023-11-01
-// Use Dinic's algorithm, taken from Stanford's team notebook. There is no known
-// license for this code, so tread with caution if reusing it.
+// 2023-12-23
+// Max flow algorithm copied from fastflow.cpp. This algorithm is a bit slower
+// than the Dinic's implementation from the Stanford ACM team notebook (see the
+// history of this file if interested).
+#include <algorithm>
+#include <queue>
 #include <stdio.h>
 #include <vector>
 using namespace std;
-const int INF = 2000000000;
-struct Edge {
-    int from, to, cap, flow, index;
-    Edge(int from, int to, int cap, int flow, int index) :
-        from(from), to(to), cap(cap), flow(flow), index(index) {}
+struct st {
+    int v;
+    int cap;
+    int back;
 };
-
-struct Dinic {
-    int N;
-    vector<vector<Edge> > G;
-    vector<Edge *> dad;
-    vector<int> Q;
-
-    // N = number of vertices
-    Dinic(int N) : N(N), G(N), dad(N), Q(N) {}
-
-    // Add an edge to initially empty network. from, to are 0-based
-    void AddEdge(int from, int to, int cap) {
-        G[from].push_back(Edge(from, to, cap, 0, G[to].size()));
-        if (from == to) G[from].back().index++;
-        G[to].push_back(Edge(to, from, 0, 0, G[from].size() - 1));
+long long get_max_flow(vector<vector<st>>&& adj, int s, int t) {
+    const int V = adj.size();
+    vector<long long> excess(V, 0);
+    vector<int> active(V, 0);
+    vector<int> height(V, 0);
+    vector<int> hcnt(2*V + 1, 0);
+    queue<int> Q;
+    height[s] = V;
+    hcnt[V] = 1;
+    hcnt[0] = V - 1;
+    for (int i = 0; i < V; i++) {
+        if (i == s || i == t) continue;
+        active[i] = 1;
+        Q.push(i);
     }
-
-    long long BlockingFlow(int s, int t) {
-        fill(dad.begin(), dad.end(), nullptr);
-        dad[s] = &G[0][0] - 1;
-
-        int head = 0, tail = 0;
-        Q[tail++] = s;
-        while (head < tail) {
-            int x = Q[head++];
-            for (int i = 0; i < G[x].size(); i++) {
-                Edge &e = G[x][i];
-                if (!dad[e.to] && e.cap - e.flow > 0) {
-                    dad[e.to] = &G[x][i];
-                    Q[tail++] = e.to;
+    for (auto& edge : adj[s]) {
+        excess[edge.v] += edge.cap;
+        adj[edge.v][edge.back].cap = edge.cap;
+        edge.cap = 0;
+    }
+    while (!Q.empty()) {
+        const int u = Q.front();
+        Q.pop();
+        active[u] = 0;
+        int best = 1e9;
+        for (auto& edge : adj[u]) {
+            if (!edge.cap) continue;
+            if (height[u] == height[edge.v] + 1) {
+                const int x = min<long long>(excess[u], edge.cap);
+                excess[u] -= x;
+                excess[edge.v] += x;
+                edge.cap -= x;
+                adj[edge.v][edge.back].cap += x;
+                if (edge.v != s && edge.v != t && !active[edge.v]) {
+                    active[edge.v] = 1;
+                    Q.push(edge.v);
+                }
+                if (excess[u] == 0) break;
+            } else {
+                best = min(best, height[edge.v]);
+            }
+        }
+        if (excess[u] > 0) {
+            const int oldh = height[u];
+            height[u] = best + 1;
+            hcnt[best + 1]++;
+            if (0 == --hcnt[oldh] && oldh < V) {
+                for (int i = 0; i < V; i++) {
+                    if (i != s && i != t &&
+                        height[i] > oldh && height[i] <= V) {
+                        hcnt[height[i]]--;
+                        height[i] = V + 1;
+                    }
                 }
             }
-        }
-        if (!dad[t]) return 0;
-
-        long long totflow = 0;
-        for (int i = 0; i < G[t].size(); i++) {
-            Edge *start = &G[G[t][i].to][G[t][i].index];
-            int amt = INF;
-            for (Edge *e = start; amt && e != dad[s]; e = dad[e->from]) {
-                if (!e) { amt = 0; break; }
-                amt = min(amt, e->cap - e->flow);
+            if (!active[u]) {
+                active[u] = 1;
+                Q.push(u);
             }
-            if (amt == 0) continue;
-            for (Edge *e = start; amt && e != dad[s]; e = dad[e->from]) {
-                e->flow += amt;
-                G[e->to][e->index].flow -= amt;
-            }
-            totflow += amt;
         }
-        return totflow;
     }
-
-    // Call this to get the max flow. s, t are 0-based.
-    // Note, you can only call this once.
-    // To obtain the actual flow values, look at all edges with
-    // capacity > 0 (zero capacity edges are residual edges).
-    long long GetMaxFlow(int s, int t) {
-        long long totflow = 0;
-        while (long long flow = BlockingFlow(s, t))
-            totflow += flow;
-        return totflow;
-    }
-};
-
+    return excess[t];
+}
 int main() {
     int N, M, P; scanf("%d %d %d", &N, &M, &P);
-    Dinic d(2 + N + M);
+    vector<vector<st>> adj(N + M + 2);
     for (int i = 1; i <= N; i++) {
-        d.AddEdge(0, i, 1);
+        adj[0].push_back(st{i, 1, (int)adj[i].size()});
+        adj[i].push_back(st{0, 0, (int)adj[0].size() - 1});
     }
     for (int i = 1; i <= M; i++) {
-        d.AddEdge(N + i, N + M + 1, 1);
+        adj[N + i].push_back(st{N + M + 1, 1, (int)adj[N + M + 1].size()});
+        adj[N + M + 1].push_back(st{N + i, 0, (int)adj[N + i].size() - 1});
     }
     for (int i = 0; i < P; i++) {
         int A, B; scanf("%d %d", &A, &B);
-        d.AddEdge(A, N + B, 1);
+        adj[A].push_back(st{N + B, 1, (int)adj[N + B].size()});
+        adj[N + B].push_back(st{A, 0, (int)adj[A].size() - 1});
     }
-    printf("%d\n", (int)d.GetMaxFlow(0, N + M + 1));
+    printf("%lld\n", get_max_flow(move(adj), 0, N + M + 1));
     return 0;
 }
