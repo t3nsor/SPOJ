@@ -78,44 +78,21 @@ void suffix_array(int* s, int* SA, int n, int K) {
 		}
 	}
 }
+
 int main()
 {
-	int T;
-	scanf("%d\n",&T);
-	char input[100000];
-	while (T--)
-	{
-		gets(input);
-		int N=strlen(input);
-		int i,j,k;
-		int V[N+3];
-		int sa[N+3]; 
-		for (i=0; i<N; ++i)
-			V[i]=input[i];
-		suffix_array(V,sa,N,256);
-		int rank[N+1];
-		for (i=0; i<N; ++i)
-			rank[sa[i]]=i;
-		long long res=N;
-		res*=N+1;
-		res/=2;
-		k=0;
-		for (i=0; i<N; ++i)
-		{
-			if (k>0) --k;
-			if (rank[i]==N-1)
-			{
-				k=0;
-				continue;
-			}
-			j=sa[rank[i]+1];
-			while (i+k<N&&j+k<N&&V[i+k]==V[j+k]) ++k;
-			res-=k;
-		}
-//		for (i=0; i<N; i++)
-//			printf("%s\n",input+sa[i+1]);
-		printf("%lld\n",res);
-	}
+	static char s[111111];
+	gets(s);
+	int N=strlen(s);
+	int i,j;
+	s[N]=0;
+	int buf[N+3];
+	for (i=0; i<=N; ++i)
+		buf[i]=s[i]; //includes final zero
+	int sa[N+3];
+	suffix_array(buf,sa,N+1,256);
+	for (i=1; i<=N; i++)
+		printf("%d\n",sa[i]);
 	return 0;
 }
 
