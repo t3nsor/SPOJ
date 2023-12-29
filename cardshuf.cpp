@@ -1,3 +1,4 @@
+// 2023-12-27
 // In order to support the "delete from given position" and "insert at given
 // position" operations we need to use a balanced BST structure. The idea is
 // that we ignore the numerical order of the node keys, and solely perform
