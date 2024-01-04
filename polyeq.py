@@ -86,7 +86,8 @@ class Poly(list):
 def find_roots(P, n, lower, upper):
     # Find `n` roots of `P` that fall within [lower, upper], with multiplicity.
     # For a root that is not an integer, either the floor or ceiling will be
-    # returned.
+    # returned. For a root that is an integer, the returned value might be off
+    # by 1.
 
     if upper - lower <= 1 or n == 0:
         return n * [lower]
