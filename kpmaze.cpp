@@ -7,7 +7,8 @@
 // actual fact the maximum possible result fits in 32 bits, so the intermediate
 // calculations could be done using 64-bit arithmetic only, but this is not
 // a priori obvious (at least to me, because I'm bad at math), i.e., all the
-// `unsigned __int128`s below could be replaced by `unsigned long long`. When
+// `unsigned __int128`s below could be replaced by `unsigned long long` if an
+// appropriate 32-bit prime is chosen. When
 // this problem was set in 2006, the judge's C++ compiler probably did not
 // support emulated 128 bit arithmetic in C++, so if you weren't able to somehow
 // figure out that 64-bit arithmetic is sufficient, you would have to compute
