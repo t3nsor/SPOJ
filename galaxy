@@ -1,0 +1,62 @@
+# 2024-10-29
+# see wstp.cpp for transpiler
+# 0 -> testcase counter
+# 1 -> operand 1
+# 2 -> operand 2
+# 3 -> operator
+# 4 -> result
+# 5 -> temporary input char
+# ascii values: `*` = 42; `+` = 43; `-` = 45
+push 0 readn  # read number of testcases
+label L1  # testcase loop (stack is empty here)
+    push 0 load dup  # load 2 copies of testcase counter
+    jzero END
+    push 1 sub push 0 swap store  # write decremented counter back to memory
+    push 1 push 0 store  # set operand 1 to zero
+    label L2  # loop to read first integer
+    push 5 readc  # read a character
+    push 5 load dup push 14 sub  # make a copy and compare it with CR
+    jneg L6
+    jump L7
+    label L6
+    # we don't need the second copy of the character
+    pop
+    jump L2
+    label L7
+    dup push 48 sub  # make another copy of the character and compare with '0'
+    jneg L3
+    # op1 = 10*op1 + digit
+    push 48 sub push 1 load push 10 mul add push 1 swap store
+    jump L2
+    label L3
+    push 3 swap store  # store operator
+    push 2 push 0 store  # set operand 2 to zero
+    label L4  # loop to read second integer
+    push 5 readc  # read a character
+    push 5 load dup push 48 sub  # make a copy and compare it with '0'
+    jneg L5
+    # op2 = 10*op2 + digit
+    push 48 sub push 2 load push 10 mul add push 2 swap store
+    jump L4
+    label L5
+    push 1 load  # push first operand
+    push 2 load  # push second operand
+    push 3 load dup  # load 2 copies of operator
+    push 42 sub  # compare with ascii value of `*`
+    jzero MUL
+    push 43 sub  # compare with ascii value of `+`
+    jzero ADD
+# subtract
+    sub
+    jump PRINT
+    label ADD
+    add
+    jump PRINT
+    label MUL
+    pop  # discard other copy of operator
+    mul
+    label PRINT
+    writen push 10 writec
+    jump L1
+label END
+exit

@@ -32,11 +32,14 @@ i must be nonnegative.
 
 === I/O ===
   writec    Pop stack and write the value as a character to stdout
-  writei    Pop stack and write the value as an integer to stdout
+  writen    Pop stack and write the value as an integer to stdout. Newline is
+            not written.
   readc     Let i be the top value. Pop this off, read a character from
             stdin, and store its value at heap memory location i
-  readi     Let i be the top value. Pop this off, read an integer from
-            stdin, and store its value at heap memory location i
+  readn     Let i be the top value. Pop this off. Read characters until the end
+            of line; the resulting string is interpreted as an integer (there
+            will be an error if there are any trailing non-digits). Store the
+            integer value at heap memory location i.
 
 === Flow control ===
   label L   Mark label here (should be unique, but this isn't enforced)

@@ -9,3 +9,6 @@
 
 .*
 __pycache__
+
+# whitespace transpiler (binary)
+wstp
