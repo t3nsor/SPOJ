@@ -1,74 +1,67 @@
-// 2025-05-19
+// 2025-05-20
 // The weighted version of the minimum diameter spanning tree problem is much
 // harder than the unweighted version (see MDST) because we can no longer just
 // try each vertex and the midpoint of each edge as candidate locations for the
 // absolute 1-center. The algorithm to find the absolute 1-center is described
 // here: https://stackoverflow.com/a/41209943/481267
-// Note that for dense graphs the running time will be O(n^3 log n). The use of
-// ordered sets, although quite natural, makes the constant factor large. This
-// is the slowest accepted solution on SPJO.
+//
+// For dense graphs, it's possible to implement this algorithm in O(VE). The
+// approach is described in the official solution. After finding the distance
+// matrix, we prepare, for each vertex, a sorted list of vertices by their
+// distance from the former. When finding the local centre for a given edge
+// (u, v), we use the list of vertices sorted by their distance from `u` to
+// prepare a sublist of vertices sorted by their distance from `u` consisting of
+// all "maximal" vertices: a vertex `i` is not maximal if there exists some
+// other vertex `j` such that dist[u][i] <= dist[u][j] and dist[v][i] <=
+// dist[v][j] also. The local centre is either at one of the endpoints of the
+// edge or at an intersection point between the curves of two adjacent vertices
+// in the maximal sublist. (This follows from the fact that when each such curve
+// ceases to be on the upper envelope, it is necessarily replaced by the one
+// immediately preceding it in the list since it can't intersect any other curve
+// without intersecting that one first.)
+//
+// This version is much faster than the O(VE log V) version (see commit
+// e90fa6e).
 #include <algorithm>
 #include <iostream>
 #include <set>
 #include <utility>
 #include <vector>
 using namespace std;
-pair<int, int> find_local_center(int u, int v, int l,
+pair<int, int> find_local_center(int u, const vector<int>& order, int v, int l,
                                  const vector<vector<int>>& dist) {
-    // We maintain two ordered sets of vertices: those for whom the distance to
-    // the further of `u` and `v` is currently increasing (with a slope of 1),
-    // and those for whom it's decreasing (with a slope of -1). These sets are
-    // called `pos` and `neg`, respectively. For each vertex we also compute the
-    // position `p` along the edge at which the vertex should be removed from
-    // `pos` and inserted into `neg`.
     const int V = dist.size();
-    vector<int> intercept(V);
-    set<pair<int, int>> pos, neg;
-    vector<pair<int, int>> event;
-    for (int i = 0; i < V; i++) {
-        const int p = max(0, min(l, (-dist[u][i] + dist[v][i] + l) / 2));
-        intercept[i] = dist[u][i];
-        pos.emplace(intercept[i], i);
-        event.emplace_back(p, i);
+    vector<int> hull;
+    for (const int i : order) {
+        if (!hull.empty() &&
+            dist[u][i] == dist[u][hull.back()] &&
+            dist[v][i] <= dist[v][hull.back()]) continue;
+        while (!hull.empty() && dist[v][i] >= dist[v][hull.back()]) {
+            hull.pop_back();
+        }
+        hull.push_back(i);
     }
-    pair<int, int> result(-1, 1e9);
-    event.emplace_back(0, -1);
-    event.emplace_back(l, -1);
-    sort(event.begin(), event.end());
-    int last = 0;
-    for (const auto e : event) {
-        const int cur = e.first;
-        int pos_hi = -1;
-        int neg_hi = -1;
-        if (!pos.empty()) {
-            pos_hi = prev(pos.end())->second;
+    pair<int, int> result(l, dist[v][hull.front()]);
+    if (result.second > dist[u][hull.back()]) {
+        result.first = 0;
+        result.second = dist[u][hull.back()];
+    }
+    for (int i = 0; i + 1 < hull.size(); i++) {
+        // peak point for `hull[i + 1]`
+        const int p = max(0, min(l, (dist[v][hull[i + 1]]
+                                     - dist[u][hull[i + 1]]
+                                     + l) / 2));
+        // value for `hull[i + 1]` at peak point
+        const int val = min(p + dist[u][hull[i + 1]],
+                            l - p + dist[v][hull[i + 1]]);
+        // intersection point
+        const int x = (val + p - dist[u][hull[i]]) / 2;
+        const int minval = min(x + dist[u][hull[i]],
+                               l - x + dist[v][hull[i]]);
+        if (minval < result.second) {
+            result.first = x;
+            result.second = minval;
         }
-        if (!neg.empty()) {
-            neg_hi = prev(neg.end())->second;
-        }
-        int lowpos = cur;
-        if (pos_hi >= 0 && neg_hi >= 0) {
-            // If the highest positive line and the highest negative line
-            // intersect somewhere in the middle of the current interval, that
-            // intersection point is better than the endpoints
-            const int x = (intercept[neg_hi] - intercept[pos_hi]) / 2;
-            if (x > last && x < cur) lowpos = x;
-        }
-        int top = -1;
-        if (pos_hi >= 0) top = max(top, intercept[pos_hi] + lowpos);
-        if (neg_hi >= 0) top = max(top, intercept[neg_hi] - lowpos);
-        if (top < result.second) {
-            result.first = lowpos;
-            result.second = top;
-        }
-        if (e.second >= 0) {
-            pos.erase(make_pair(intercept[e.second], e.second));
-            const int val = min(dist[u][e.second] + cur,
-                                dist[v][e.second] + l - cur);
-            intercept[e.second] = val + cur;
-            neg.emplace(intercept[e.second], e.second);
-        }
-        last = cur;
     }
     return result;
 }
@@ -98,6 +91,17 @@ int main() {
             }
         }
     }
+    // prepare sorted lists of vertices
+    vector<vector<int>> order;
+    for (int i = 0; i < V; i++) {
+        vector<int> v;
+        for (int j = 0; j < V; j++) {
+            v.push_back(j);
+        }
+        sort(v.begin(), v.end(),
+             [&](int u, int v) { return dist[i][u] < dist[i][v]; });
+        order.push_back(move(v));
+    }
     // find absolute 1-center
     pair<int, int> bestedge;
     int bestpos;
@@ -105,7 +109,7 @@ int main() {
     for (int i = 0; i < V; i++) {
         for (int j = i + 1; j < V; j++) {
             if (edge[i][j] >= 1e9) continue;
-            const auto lc = find_local_center(i, j, edge[i][j], dist);
+            const auto lc = find_local_center(i, order[i], j, edge[i][j], dist);
             if (lc.second < bestr) {
                 bestedge = make_pair(i, j);
                 bestpos = lc.first;
