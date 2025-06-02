@@ -7,6 +7,8 @@
 # we can obtain S_k(n) by multiplying S_{k-1}(n) by k, integrating with respect
 # to n (choosing the result that has no constant term) and then adding a linear
 # term that makes S_k(1) equal to 1.
+# Unfortunately because the time limit for this problem is strict, I had to
+# translate this solution to C++. hardp.cpp is the actual accepted code.
 from fractions import Fraction
 import math
 
