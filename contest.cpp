@@ -1,4 +1,7 @@
 // 2025-07-04
+// According to the official solutions, there is a version of this problem with
+// larger bounds, for which you have to use mincost maxflow instead of brute
+// force. This is left as an exercise for the reader.
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
