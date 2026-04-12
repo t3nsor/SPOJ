@@ -1,130 +1,206 @@
-// 2024-02-11
+// 2026-04-12
+// Brian's implementation of the "push-relabel with cost scaling" algorithm for
+// mincost maxflow.
 #include <algorithm>
 #include <limits.h>
-#include <stdio.h>
+#include <queue>
 #include <utility>
 #include <vector>
-using namespace std;
+class MCMF {
+    using LL = long long;
+    int V;
+    std::vector<LL> pot;
+    std::vector<LL> excess;
+    LL eps;
 
-/* Min cost max flow (Edmonds-Karp relabelling + fast heap Dijkstra)
- * Based on code by Frank Chu and Igor Naverniouk
- * (http://shygypsy.com/tools/mcmf4.cpp)
- *
- * COMPLEXITY:
- *      - Worst case: O(min(m*log(m)*flow, n*m*log(m)*fcost))
- * FIELD TESTING:
- *      - Valladolid 10594: Data Flow
- * REFERENCE:
- *      Edmonds, J., Karp, R.  "Theoretical Improvements in Algorithmic
- *          Efficieincy for Network Flow Problems".
- *      This is a slight improvement of Frank Chu's implementation.
- **/
+  public:
+    struct Edge {
+        int to;
+        int rev;
+        LL res;
+        LL cost;
+        LL flow;
+    };
+    std::vector<std::vector<Edge>> graph;
 
-#define Inf (LLONG_MAX/2)
-#define BUBL { \
-    t = q[i]; q[i] = q[j]; q[j] = t; \
-    t = inq[q[i]]; inq[q[i]] = inq[q[j]]; inq[q[j]] = t; }
-#define Pot(u,v) (d[u] + pi[u] - pi[v])
-struct MinCostMaxFlow {
-	typedef long long LL;
-	int n, qs;
-	vector<vector<LL> > cap, cost, fnet;
-	vector<vector<int> > adj;
-	vector<LL> d, pi;
-	vector<int> deg, par, q, inq;
-	
-	// n = number of vertices
-	MinCostMaxFlow(int n): n(n), qs(0), deg(n+1), par(n+1), d(n+1), q(n+1), inq(n+1), pi(n+1), cap(n+1, vector<LL>(n+1)), cost(cap), fnet(cap), adj(n+1, vector<int>(n+1)) {}
-	
-	// call to add a directed edge. vertices are 0-based
-	// ALL COSTS MUST BE NON-NEGATIVE
-	void AddEdge(int from, int to, LL cap_, LL cost_) {
-		cap[from][to] = cap_; cost[from][to] = cost_;
-	}
-	
-	bool dijkstra( int s, int t ) {
-		fill(d.begin(), d.end(), 0x3f3f3f3f3f3f3f3fLL);
-		fill(par.begin(), par.end(), -1);
-		fill(inq.begin(), inq.end(), -1);
-		d[s] = qs = 0;
-		inq[q[qs++] = s] = 0;
-		par[s] = n;
-		while( qs )	{
-			int u = q[0]; inq[u] = -1;
-			q[0] = q[--qs];
-			if( qs ) inq[q[0]] = 0;
-			for( int i = 0, j = 2*i + 1, t; j < qs; i = j, j = 2*i + 1 ) {
-				if( j + 1 < qs && d[q[j + 1]] < d[q[j]] ) j++;
-				if( d[q[j]] >= d[q[i]] ) break;
-				BUBL;
-			}
-			for( int k = 0, v = adj[u][k]; k < deg[u]; v = adj[u][++k] ) {
-				if( fnet[v][u] && d[v] > Pot(u,v) - cost[v][u] ) 
-					d[v] = Pot(u,v) - cost[v][par[v] = u];			
-				if( fnet[u][v] < cap[u][v] && d[v] > Pot(u,v) + cost[u][v] ) 
-					d[v] = Pot(u,v) + cost[par[v] = u][v];
-				if( par[v] == u ) {
-					if( inq[v] < 0 ) { inq[q[qs] = v] = qs; qs++; }
-					for( int i = inq[v], j = ( i - 1 )/2, t;
-						 d[q[i]] < d[q[j]]; i = j, j = ( i - 1 )/2 )
-						 BUBL;
-				}
-			}
-		}
-		for( int i = 0; i < n; i++ ) if( pi[i] < Inf ) pi[i] += d[i];
-		return par[t] >= 0;
-	}
-
-	// Returns: (flow, total cost) between source s and sink t
-	// Call this once only. fnet[i][j] contains the flow from i to j. Careful, fnet[i][j] and fnet[j][i] could both be positive.
-	pair<LL, LL> mcmf4(int s, int t) {
-		for( int i = 0; i < n; i++ )
-			for( int j = 0; j < n; j++ )
-				if( cap[i][j] || cap[j][i] ) adj[i][deg[i]++] = j;
-		LL flow = 0; LL fcost = 0;
-		while( dijkstra( s, t ) ) {
-			LL bot = LLONG_MAX;
-			for( int v = t, u = par[v]; v != s; u = par[v = u] )
-				bot = min(bot, fnet[v][u] ? fnet[v][u] : ( cap[u][v] - fnet[u][v] ));
-			for( int v = t, u = par[v]; v != s; u = par[v = u] )
-				if( fnet[v][u] ) { fnet[v][u] -= bot; fcost -= bot * cost[v][u]; }
-				else { fnet[u][v] += bot; fcost += bot * cost[u][v]; }
-			flow += bot;
-		}
-		return make_pair(flow, fcost);
-	}
-};
-
-// code by Brian starts here
-void do_testcase() {
-    int N; scanf("%d", &N);
-    MinCostMaxFlow mcmf(N + 2);
-    for (int i = 1; i <= N; i++) {
-        mcmf.AddEdge(i, N + 1, 1, 0);
+    // call this before starting a new graph (including the first time)
+    void init(int V) {
+        this->V = V;
+        graph.clear();
+        graph.resize(V);
+        eps = 1;
     }
-    // the mcmf implementation doesn't support multiple edges, so we have to
-    // combine them before calling AddEdge
-    vector<int> initial(N, 0);
-    for (int i = 0; i < N; i++) {
-        int x; scanf("%d", &x); ++initial[x - 1];
+
+    void add_edge(int u, int v, LL cap, LL cost) {
+        graph[u].push_back(Edge{v, (int)graph[v].size(), cap, cost});
+        graph[v].push_back(Edge{u, (int)graph[u].size() - 1, 0, -cost});
+        while (eps < abs(cost)) eps <<= 1;
     }
-    for (int i = 0; i < N; i++) {
-        if (initial[i]) {
-            mcmf.AddEdge(0, i + 1, initial[i], 0);
+
+    // call this exactly once for a given graph; the output consists of the
+    // `flow` fields in `graph`
+    void calc(int s, int t) {
+        // calculate the max flow
+        auto graph_copy = graph;
+        const LL F = calc_maxflow(s, t);
+        graph = std::move(graph_copy);
+        // set demand values
+        excess.assign(V, 0);
+        excess[s] = F;
+        excess[t] = -F;
+        pot.assign(V, 0);
+        // scale the costs (the scale factor must be strictly greater than `V`
+        // in order for this to be correct)
+        LL scale = 1; while (scale <= V) scale <<= 1;
+        for (int i = 0; i < V; i++) for (auto& e : graph[i]) e.cost *= scale;
+        eps *= scale;
+        while (eps >>= 1) { refine(); }
+        // restore original costs
+        for (int i = 0; i < V; i++) for (auto& e : graph[i]) e.cost /= scale;
+    }
+
+  private:
+    void augment(int from, Edge& e, LL delta) {
+        auto& r = graph[e.to][e.rev];
+        e.flow += delta;
+        r.flow -= delta;
+        e.res -= delta;
+        r.res += delta;
+        excess[from] -= delta;
+        excess[e.to] += delta;
+    }
+
+    LL calc_maxflow(int s, int t) {
+        // optimized push-relabel (adapted from fastflow.cpp; see there for an
+        // explanation)
+        pot.assign(V, 0);
+        excess.assign(V, 0);
+        std::vector<int> active(V, 0);
+        std::vector<int> hcnt(2*V + 1, 0);
+        std::queue<int> Q;
+        pot[s] = V;
+        hcnt[V] = 1;
+        hcnt[0] = V - 1;
+        for (int i = 0; i < V; i++) {
+            if (i == s || i == t) continue;
+            active[i] = 1;
+            Q.push(i);
+        }
+        for (auto& e : graph[s]) {
+            excess[e.to] += e.res;
+            graph[e.to][e.rev].res = std::exchange(e.res, 0);
+        }
+        while (!Q.empty()) {
+            const int u = Q.front();
+            Q.pop();
+            active[u] = 0;
+            int best = 1e9;
+            for (auto& e : graph[u]) {
+                if (!e.res) continue;
+                if (pot[u] == pot[e.to] + 1) {
+                    const int x = std::min<long long>(excess[u], e.res);
+                    excess[u] -= x;
+                    excess[e.to] += x;
+                    e.res -= x;
+                    graph[e.to][e.rev].res += x;
+                    if (e.to != s && e.to != t && !active[e.to]) {
+                        active[e.to] = 1;
+                        Q.push(e.to);
+                    }
+                    if (excess[u] == 0) break;
+                } else {
+                    best = std::min(best, (int)pot[e.to]);
+                }
+            }
+            if (excess[u] > 0) {
+                const int oldh = pot[u];
+                pot[u] = best + 1;
+                hcnt[best + 1]++;
+                if (0 == --hcnt[oldh] && oldh < V) {
+                    for (int i = 0; i < V; i++) {
+                        if (i != s && i != t &&
+                            pot[i] > oldh && pot[i] <= V) {
+                            hcnt[pot[i]]--;
+                            pot[i] = V + 1;
+                        }
+                    }
+                }
+                if (!active[u]) {
+                    active[u] = 1;
+                    Q.push(u);
+                }
+            }
+        }
+        return excess[t];
+    }
+
+    void refine() {
+        for (int i = 0; i < V; i++) {
+            for (auto& e : graph[i]) {
+                if (e.res > 0 && e.cost + pot[i] - pot[e.to] < 0) {
+                    augment(i, e, e.res);
+                }
+            }
+        }
+        std::queue<int> Q;
+        for (int i = 0; i < V; i++) { if (excess[i] > 0) Q.push(i); }
+        while (!Q.empty()) {
+            const int u = Q.front(); Q.pop();
+            while (excess[u] > 0) {
+                bool adv = false;
+                for (auto& e : graph[u]) {
+                    if (e.res > 0 && e.cost + pot[u] - pot[e.to] < 0) {
+                        const LL delta = std::min(excess[u], e.res);
+                        const LL old_excess = excess[e.to];
+                        augment(u, e, delta);
+                        if (old_excess <= 0 && excess[e.to] > 0) Q.push(e.to);
+                        adv = true;
+                        if (!excess[u]) break;
+                    }
+                }
+                if (excess[u] > 0 && !adv) {
+                    LL m = LLONG_MAX;
+                    for (const auto& e : graph[u]) {
+                        if (e.res > 0) {
+                            m = std::min(m, e.cost + pot[u] - pot[e.to]);
+                        }
+                    }
+                    pot[u] -= m + eps;
+                }
+            }
         }
     }
-    int e; scanf("%d", &e);
-    while (e--) {
-        int x, y; scanf("%d %d", &x, &y);
-        mcmf.AddEdge(x, y, N, 1);
-        mcmf.AddEdge(y, x, N, 1);
+};
+
+// driver code starts here
+#include <iostream>
+using namespace std;
+
+void do_testcase() {
+    int N; cin >> N;
+    MCMF mcmf;
+    mcmf.init(N + 2);
+    for (int i = 0; i < N; i++) {
+        mcmf.add_edge(i + 1, N + 1, 1, 0);
+        int x; cin >> x;
+        mcmf.add_edge(0, x, 1, 0);
     }
-    const auto result = mcmf.mcmf4(0, N + 1);
-    if (result.first != N) throw;
-    printf("%lld\n", result.second);
+    int E; cin >> E;
+    while (E--) {
+        int x, y; cin >> x >> y;
+        mcmf.add_edge(x, y, N, 1);
+        mcmf.add_edge(y, x, N, 1);
+    }
+    mcmf.calc(0, N + 1);
+    long long cost = 0;
+    for (int i = 0; i < N + 2; i++) {
+        for (const auto& e : mcmf.graph[i]) {
+            cost += e.flow * e.cost;
+        }
+    }
+    cout << cost / 2 << '\n';
 }
 
 int main() {
-    int t; scanf("%d", &t);
-    while (t--) do_testcase();
+    int T; cin >> T; while (T--) do_testcase();
 }
