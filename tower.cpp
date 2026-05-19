@@ -1,4 +1,6 @@
 // 2026-05-19
+// Note: It's implied (but not directly stated) by the sample output that line
+// breaks are allowed only *before* plus signs (not after).
 #include <limits.h>
 #include <stdio.h>
 #include <string>
