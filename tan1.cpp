@@ -1,4 +1,9 @@
 // 2026-06-18
+// The problem statement is unclear when it says "(A, B, C) and (B, C, A) are
+// supposed to be counted once".  The intent is that an unordered triple is
+// counted once: (A, B, C) and any permutation of (A, B, C) should not both be
+// counted.
+//
 // The first step, obviously, is to determine when a sequence A is good
 // (winnable).  The powers of 5 modulo 8 are 1, 5, 1, 5, ..., so S is given by
 // adding the elements of A, where half of them (rounded down) are multiplied
