@@ -1,4 +1,4 @@
-// 2026-06-18
+// 2026-06-19
 // The problem statement is unclear when it says "(A, B, C) and (B, C, A) are
 // supposed to be counted once".  The intent is that an unordered triple is
 // counted once: (A, B, C) and any permutation of (A, B, C) should not both be
@@ -68,10 +68,14 @@
 // we have to precompute 3 sets of 16 combinations each.  We also need further
 // constant optimizations to pass, which help in the case where a node's degree
 // is small (see below).  And of course we avoid nested vectors in order to
-// maximize cache locality.  Ultimately, this was a nasty constant optimization
-// problem.  I do find it interesting that there are accepted solutions with
-// time less than 0.1s.  I imagine they have some clever tricks that I'm not
-// able to figure out.
+// maximize cache locality.  (I also added one more optimization after AC:
+// treating even and odd labels differently, since an even label causes the 12
+// characteristics of each branch to collapse into 4, reducing the amount of
+// work.)
+//
+// Ultimately, this was a nasty constant optimization problem.  I do find it
+// interesting that there are accepted solutions with time less than 0.1s.  I
+// imagine they have some clever tricks that I'm not able to figure out.
 
 #include <array>
 #include <stdio.h>
@@ -116,10 +120,10 @@ void make_combos() {
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < 12; j++) {
                 int s = good(l, {i}) + good(l, {j}) + good(l, {i, j});
-                combos[l][12][i][j / 4] |= (s == 0 || s == 3) << (j % 4);
+                combos[l][0][i][j / 4] |= (s == 0 || s == 3) << (j % 4);
                 for (int k = 0; k < 12; k++) {
                     int s = good(l, {i, j}) + good(l, {j, k}) + good(l, {k, i});
-                    combos[l][k][i][j / 4] |= (s == 0 || s == 3) << (j % 4);
+                    combos[l][k + 1][i][j / 4] |= (s == 0 || s == 3) << (j % 4);
                 }
             }
         }
@@ -197,27 +201,54 @@ LL dfs2(int parent, int u) {
         for (int j = 0; j < 12; j++) mytotal[j] += counts[start[u] + i][j];
     }
     LL cnt2[13][12] = {0};
+    const auto uval = label[u];
+    const int lim = uval % 2 ? 12 : 4;
     for (int i = 0; i < deg[u]; i++) {
-        const auto uval = label[u];
         const auto v = nbr[start[u] + i];
         const Counts& uvcnt = counts[start[u] + i];
+        auto vv = uvcnt;
+        if (lim == 4 && label[v] % 2) {
+            vv[0] += vv[4] + vv[5];
+            vv[1] += vv[6] + vv[7];
+            vv[2] += vv[8] + vv[9];
+            vv[3] += vv[10] + vv[11];
+        }
         int mask1[16] = {0}, mask2[16] = {0}, mask3[16] = {0};
         if (i >= 1) {
             // note that for i == 0, the cnt2 matrix is zero, so there's no
             // point in computing the masks
-            for (int j = 1; j < 16; j++) {
-                const int k = __builtin_ctz(j);
-                mask1[j] = mask1[j - (1 << k)] + uvcnt[k];
-                mask2[j] = mask2[j - (1 << k)] + uvcnt[k + 4];
-                mask3[j] = mask3[j - (1 << k)] + uvcnt[k + 8];
+            if (lim == 12) {
+                for (int j = 1; j < 16; j++) {
+                    const int k = __builtin_ctz(j);
+                    mask1[j] = mask1[j - (1 << k)] + vv[k];
+                    mask2[j] = mask2[j - (1 << k)] + vv[k + 4];
+                    mask3[j] = mask3[j - (1 << k)] + vv[k + 8];
+                }
+            } else {
+                for (int j = 1; j < 16; j++) {
+                    const int k = __builtin_ctz(j);
+                    mask1[j] = mask1[j - (1 << k)] + vv[k];
+                }
             }
         }
         if (i >= 2) {
-            for (int j = 0; j < 13; j++) {
-                for (int k = 0; k < 12; k++) {
-                    local_result += cnt2[j][k] * mask1[combos[uval][j][k][0]];
-                    local_result += cnt2[j][k] * mask2[combos[uval][j][k][1]];
-                    local_result += cnt2[j][k] * mask3[combos[uval][j][k][2]];
+            if (lim == 12) {
+                for (int j = 0; j <= 12; j++) {
+                    for (int k = 0; k < 12; k++) {
+                        local_result += cnt2[j][k] *
+                                        mask1[combos[uval][j][k][0]];
+                        local_result += cnt2[j][k] *
+                                        mask2[combos[uval][j][k][1]];
+                        local_result += cnt2[j][k] *
+                                        mask3[combos[uval][j][k][2]];
+                    }
+                }
+            } else {
+                for (int j = 0; j <= 4; j++) {
+                    for (int k = 0; k < 4; k++) {
+                        local_result += cnt2[j][k] *
+                                        mask1[combos[uval][j][k][0]];
+                    }
                 }
             }
         } else if (i == 1) {
@@ -225,10 +256,16 @@ LL dfs2(int parent, int u) {
             // then the entries of cnt2 with j != 12 are zero, so we skip them.
             // (And if we haven't yet seen one branch, then all entries of cnt2
             // are zero, so we skip this single loop as well.)
-            for (int k = 0; k < 12; k++) {
-                local_result += cnt2[12][k] * mask1[combos[uval][12][k][0]];
-                local_result += cnt2[12][k] * mask2[combos[uval][12][k][1]];
-                local_result += cnt2[12][k] * mask3[combos[uval][12][k][2]];
+            if (lim == 12) {
+                for (int k = 0; k < 12; k++) {
+                    local_result += cnt2[0][k] * mask1[combos[uval][0][k][0]];
+                    local_result += cnt2[0][k] * mask2[combos[uval][0][k][1]];
+                    local_result += cnt2[0][k] * mask3[combos[uval][0][k][2]];
+                }
+            } else {
+                for (int k = 0; k < 4; k++) {
+                    local_result += cnt2[0][k] * mask1[combos[uval][0][k][0]];
+                }
             }
         }
         if (i + 1 < deg[u]) {
@@ -237,13 +274,13 @@ LL dfs2(int parent, int u) {
             if (i >= 1) {
                 // and if this is the first branch, all entries of cnt2 are zero
                 // so we can skip this double loop
-                for (int j = 0; j < 12; j++) {
-                    for (int k = 0; k < 12; k++) {
-                        cnt2[j][k] += uvcnt[j]*cnt2[12][k];
+                for (int j = 0; j < lim; j++) {
+                    for (int k = 0; k < lim; k++) {
+                        cnt2[j + 1][k] += vv[j]*cnt2[0][k];
                     }
                 }
             }
-            for (int j = 0; j < 12; j++) cnt2[12][j] += uvcnt[j];
+            for (int j = 0; j < lim; j++) cnt2[0][j] += vv[j];
         }
         // below we will compute the counts for the directed edge v-u, so v
         // should be a child (and not parent)
