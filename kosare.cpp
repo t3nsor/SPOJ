@@ -33,11 +33,11 @@ int get() {
 }
 int main() {
     pow2[0] = 1;
-    for (int i = 1; i <= 1000000; i++) {
+    int N = get(), M = get();
+    for (int i = 1; i <= N; i++) {
         pow2[i] = 2*pow2[i - 1];
         if (pow2[i] >= MOD) pow2[i] -= MOD;
     }
-    int N = get(), M = get();
     // a[i] is initially the number of boxes whose toys are exactly the mask
     // `i`, and will later become the number of boxes whose toys form a subset
     // of the mask `i`
