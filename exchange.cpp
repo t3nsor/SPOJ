@@ -8,7 +8,8 @@
 // highest possible point on the z axis.
 //
 // The basic observation is that if there is a set of points you could
-// possibly be at, it is never suboptimal to be at a vertex of the convex hull
+// possibly be at, it is never suboptimal to restrict youtself to being at a
+// vertex of the convex hull
 // of that set. This is because the exchange rate on each day constrains you
 // during that day to move on a plane satisfying A_K x + B_K y + z = C. If you
 // started in the interior of the previous day's convex hull, then you get a
