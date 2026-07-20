@@ -31,6 +31,7 @@ bool can(int R) {
         to.push_back(a[i]);
         wt.push_back(-1);
     }
+    // run Bellman-Ford algorithm
     vector<int> dist(V, 1e9);
     dist[V - 1] = 0;
     for (int i = 0; i < V - 1; i++) {
@@ -38,6 +39,7 @@ bool can(int R) {
             dist[to[j]] = min(dist[to[j]], dist[from[j]] + wt[j]);
         }
     }
+    // check for negative cycles
     for (int j = 0; j < from.size(); j++) {
         if (dist[to[j]] > dist[from[j]] + wt[j]) return false;
     }
