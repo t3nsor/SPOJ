@@ -1,4 +1,8 @@
 // 2026-07-23
+// We compute, for each building, the number of possible posters whose right
+// edge is at the right edge of that building (`br`) and the number whose left
+// edge is at the left edge of that building (`bl`) using a stack-based
+// algorithm.  The rest is trivial.
 #include <algorithm>
 #include <stdio.h>
 #include <utility>
