@@ -19,6 +19,8 @@
 // why this algorithm runs in O(NM^2) time is that if 2^e is the greatest power
 // of 2 that divides M, then we can split only e times, so the total running
 // time is actually O(NM 2^e), which is O(NM^2).
+//
+// There is a much simpler approach in puzzle2-2.cpp (found by my student).
 #include <algorithm>
 #include <iostream>
 #include <string>
