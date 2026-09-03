@@ -15,7 +15,8 @@
 // graph can have ~7 million edges in the worst case. It got TLE at first, so I
 // had to rewrite it to avoid vectors and use only static arrays, which sped it
 // up by a factor of 4.
-// (Perhaps an LP solution is also possible?)
+//
+// There's another approach in seq1-2.cpp with more discussion of the problem.
 #include <algorithm>
 #include <iostream>
 #include <string.h>

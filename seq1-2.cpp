@@ -8,6 +8,11 @@
 // necessary to lower an upper bound, we add it to the queue so we can check
 // whether the new value leads to further reductions in other upper bounds and
 // so on. The algorithm terminates in at most O(N^2) steps.
+//
+// This algorithm is very similar to, though not exactly the same as, the
+// "classic" algorithm based on Bellman–Ford (see segments.cpp for a faithful
+// implementation and link to explanation).  The if statements inside the main
+// while loop are relaxations.
 #include <algorithm>
 #include <iostream>
 #include <queue>
