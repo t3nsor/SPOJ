@@ -34,7 +34,6 @@
 // get an LLM to generate one for you.)
 
 #include <algorithm>
-#include <set>
 #include <stdio.h>
 #include <utility>
 #include <vector>
