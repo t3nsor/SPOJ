@@ -41,9 +41,14 @@
 // Finally, all the remaining cases are that `d` is divisible by 2 or 5 but not
 // both.  If `d` is divisible by 5, then every nontrivial solution is a
 // 5-repeat; we look for 1-repeats that are divisible by d/5 analogously to the
-// previous paragraph.  If `d` is divisible by 2, then the best nontrivial
-// solution is always an 8-repeat and we look for 1-repeats that are divisible
-// by d/2^p where d/2^p is odd.
+// previous paragraph.  If `d` is divisible by 2, then there are two subcases:
+// 1. If `d` is divisible by 4, the best nontrivial solution is always an
+//    8-repeat and we look for 1-repeats that are divisible by d/4, or by d/8 if
+//    `d` is divisible by 8.
+// 2. Otherwise, if `d` is divisible by 2 but not 6, the result is analogous to
+//    case 1, but if `d` is divisible by 6, then the best nontrivial solution
+//    may be either a 8-repeat or a 6-repeat.  (Handling the 6-repeat case is
+//    easy if you understood the principles above.)
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>
